@@ -1,0 +1,539 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Choose the Microsoft Windows Ser</title>
+</head>
+
+<body>
+
+<p>52.33.3.185</p>
+<p>Create an Email Server on an Amazon EC2 Instance</p>
+<h2>Introduction</h2>
+<p>This article is a complete, from start to finish, tutorial on:</p>
+<ul>
+	<li>Setting up an Amazon EC2 Windows free tier instance</li>
+	<li>Creating a static IP for your instance</li>
+	<li>Getting Remote Desktop to work with your instance</li>
+	<li>Setting up PuTTY and WinSCP for terminal and file transfer</li>
+	<li>Associating your instance with a domain (I'll be using Namecheap)</li>
+	<li>Setting up an email server</li>
+	<li>Creating a real SSL certificate for your webserver</li>
+</ul>
+<p>In this process, we'll learn about various tools, such as:</p>
+<ul>
+	<li>PuTTY</li>
+	<li>PuTTYgen</li>
+	<li>WinSCP</li>
+</ul>
+<p>We'll also learn about:</p>
+<ul>
+	<li>Configuring ports on the EC2 instance</li>
+	<li>Configuring ports on the Windows Firewall</li>
+	<li>Setting up SSL certificates</li>
+</ul>
+<p>There's a lot of steps here, and the reason I'm writing this is because this 
+process is not documented anywhere in one consolidated place -- what you're 
+seeing here is the result of lots of different pieces and time figuring out all 
+this stuff, especially the pain points of setting up an email server and 
+obtaining an SSL certificate (which requires an email server to the instance 
+domain!)</p>
+<h2>Pre-Step: Create an AWS account</h2>
+<p>Before proceeding, you will need an AWS account.&nbsp; If you do not have 
+one, create one now <a href="http://aws.amazon.com/">here</a>.&nbsp; Once you 
+have created an account, you will be presented with a huge list of Amazon Web 
+Services (AWS).&nbsp; Select the first one, EC@ Virtual Servers in the Cloud:</p>
+<p><img border="0" src="ec2-27.png" width="407" height="330"></p>
+<h2>Create an AWS Free Tier Instance</h2>
+<p>From the AWS EC2 Dashboard, click on the Launch Instance button:</p>
+<p><img border="0" src="ec2-28.png" width="541" height="493"></p>
+<p>Choose the Microsoft Windows Server 2012 R2 Base (Windows Free tier eligible) 
+Amazon Machine Image (AMI)</p>
+<p><img border="0" src="ec2-1.png" width="731" height="118"></p>
+<p>Click on Select on the right:</p>
+<p><img border="0" src="ec2-2.png" width="148" height="100"></p>
+<p>Select the t2.micro (Free tier eligible) instance:</p>
+<p><img border="0" src="ec2-3.png" width="924" height="180"></p>
+<p>Click on Review and Launch:</p>
+<p><img border="0" src="ec2-4.png" width="700" height="53"></p>
+<p>On the next screen, click on Launch (we'll edit security settings later.</p>
+<p><img border="0" src="ec2-5.png" width="301" height="54"></p>
+<h3>Create a Key Pair for Remote Desktop Access and the Administrator Password</h3>
+<p>Next, we create a key pair for Remote Desktop Access (RDP).&nbsp; A dialog 
+pops up saying &quot;Select an existing key pair or create a new key pair&quot;.&nbsp; 
+Select &quot;Create a new key pair&quot; and enter a key pair name, then click on Download 
+Key Pair.</p>
+<p><img border="0" src="ec2-6.png" width="779" height="129"></p>
+<p>After the key pair downloads, save this in a <i>secure location</i>.&nbsp; 
+This key pair is required to obtain the password used to log into your instance, 
+and should not be accessible by anyone else.</p>
+<p>Next, click on Launch Instances:</p>
+<p><img border="0" src="ec2-7.png" width="276" height="52"></p>
+<p>The next screen gives you some information on regarding monitoring your free 
+usage tier and how to connect to your Windows instance.&nbsp; Click on View 
+Instances:</p>
+<p><img border="0" src="ec2-8.png" width="164" height="52"></p>
+<p>While you instance is initializing, you will see something similar to this 
+(I've redacted information specific to the server I've created):</p>
+<p><img border="0" src="ec2-9.png" width="1274" height="82"></p>
+<p>Wait until the instance status change from &quot;Initializing&quot; to 2/2 checks 
+passed:&quot;</p>
+<p><img border="0" src="ec2-10.png" width="336" height="90"></p>
+<p><font color="#FF0000"><b>REMEMBER THE INSTANCE ID!</b></font></p>
+<h3>Create an Elastic IP</h3>
+<p>Once the instance is initialized, we will create an elastic IP (a static IP) 
+for this instance so that we can associate a domain name with the IP address of 
+our instance.&nbsp; Click on &quot;Elastic IPs&quot; from the menubar on the left:</p>
+<p><img border="0" src="ec2-13.png" width="204" height="180"></p>
+<p>Click on the &quot;Allocate New Address&quot; button:</p>
+<p><img border="0" src="ec2-14.png" width="358" height="58"></p>
+<p>Confirm the dialog:</p>
+<p><img border="0" src="ec2-15.png" width="492" height="212"></p>
+<p>Click on the Close button.&nbsp; You will see an entry in the list of elastic 
+IPs:</p>
+<p><img border="0" src="ec2-16.png" width="672" height="85"></p>
+<p>Note that there is no instance associated with this elastic IP.&nbsp; Select 
+the newly created elastic IP (the checkbox on the left):</p>
+<p><img border="0" src="ec2-17.png" width="234" height="85"></p>
+<h3>Associate the Elastic IP with the Instance</h3>
+<p>Then, from the Action menu, select &quot;Associate Address&quot;:</p>
+<p><img border="0" src="ec2-18.png" width="441" height="178"></p>
+<p>Did you remember the instance ID?&nbsp; Click on the box to the right of 
+&quot;Instance&quot; and select your instance ID:</p>
+<p><img border="0" src="ec2-19.png" width="692" height="132"></p>
+<p>Then click on &quot;Associate&quot;:</p>
+<p><img border="0" src="ec2-20.png" width="196" height="58"></p>
+<p><font color="#FF0000"><b>REMEMBER YOUR ELASTIC IP!</b></font></p>
+<h3>Get the Password for Your Administrator Account</h3>
+<p>Click on EC2 Dashboard at the top of the menubar on the left:</p>
+<p><img border="0" src="ec2-21.png" width="187" height="167"></p>
+<p>Then click on &quot;Running Instances&quot; (I have 4 instances, your number will be 1 
+or some other value if you've done this before):</p>
+<p><img border="0" src="ec2-22.png" width="229" height="35"></p>
+<p>Now if you select (the checkbox on the left) your instance, you will see that 
+the Public IP and Elastic IP (displayed at the bottom right in the Description 
+tab) are both the same.</p>
+<p>Click on Connect:</p>
+<p><img border="0" src="ec2-23.png" width="399" height="56"></p>
+<p>On the &quot;Connect To Your Instance&quot; popup, before doing anything else, click on 
+&quot;Get Password&quot;:</p>
+<p><img border="0" src="ec2-24.png" width="546" height="142"></p>
+<p>On the next popup, click on &quot;Choose File&quot; and select the &quot;pem&quot; file that you 
+downloaded when you created the instance:</p>
+<p><img border="0" src="ec2-25.png" width="381" height="35"></p>
+<p>Once the file is selected, click on &quot;Decrypt Password&quot;:</p>
+<p><img border="0" src="ec2-26.png" width="187" height="46"></p>
+<p><font color="#FF0000"><b>SAVE THIS PASSWORD!</b></font></p>
+<h3>Connect to Your Instance</h3>
+<p>Now you can either download the RDP file or launch Remote Desktop Connection 
+yourself.&nbsp; If you choose the latter, enter the IP address for the computer 
+name and, when you expand &quot;Options&quot;, enter the username and decide whether to 
+save your credentials.&nbsp; You may wish to save your RDP connection for future 
+use:</p>
+<p><img border="0" src="rdp-1.png" width="495" height="325"></p>
+<p>Click the Connect button, then click the Connect button in the confirmation 
+dialog, then enter the password that was decrypted above:</p>
+<p>You will get a dialog indicating that the remote computer could not be 
+authenticated.&nbsp; Click on &quot;Don't ask me again for connections to this 
+computer&quot; then click on the Yes button to proceed with the connection.</p>
+<p>Give it a minute or so for your instance to initialize your first-time 
+connection.&nbsp; When it's done, you'll see the desktop (bigger than this 
+reduced screenshot here!)</p>
+<p><img border="0" src="rdp-2.png" width="313" height="244"></p>
+<h2>Setup for Secure Copy (SCP)</h2>
+<p>We could install FileZilla and set up FTP, but I prefer to use an SSH server 
+as it provides both file copy and terminal (command prompt) connections.</p>
+<h3>Installing the Bitvise SSH Server</h3>
+<p>It's a lot easier to manage your instance with an SSH server.&nbsp; You can 
+access the command line and transfer files very easily with tools such as PuTTY 
+and WinSCP.&nbsp; This section describes how to install the
+<a href="https://www.bitvise.com/index">Bitvise</a> SSH Server on your instance.&nbsp; 
+Please note that this product can be used for free only for non-commercial use.</p>
+<p>Fussing with Internet Explorer on your instance is a painful experience of 
+constantly adding exceptions for each page that you visit.&nbsp; Rather than 
+circumventing this (usually by installing Chrome or Firefox), simply download 
+the Bitvise SSH Server (<a href="https://www.bitvise.com/ssh-server-download">here</a>) 
+to your client computer (not the instance.)&nbsp; Once downloaded, you can right 
+click on the install exe, select copy, and then paste the install exe to the 
+desktop of your instance, via your RDP connection.&nbsp; It's a bit slow to 
+upload the installer, but once we have the ability to SCP (Secure CoPy), we 
+won't have to go through the copy-paste process again.</p>
+<p>Once copied to your desktop, double click on the installer:</p>
+<p><img border="0" src="bv-1.png" width="124" height="111"></p>
+<p>Agree to the terms (please purchase a copy if your instance will be for 
+commercial use, or find a different SSH server), and click on the Install 
+button.&nbsp; Do not change any of the default options.&nbsp; </p>
+<p><img border="0" src="bv-2.png" width="341" height="206"></p>
+<p>On the second dialog, select the appropriate edition, standard (for 
+commercial use) or personal, for non-commercial use:</p>
+<p><img border="0" src="bv-3.png" width="416" height="354"></p>
+<p>If you choose the personal edition, you will be prompted to fill in your 
+name:</p>
+<p><img border="0" src="bv-4.png" width="408" height="202"></p>
+<p>Once installed, click OK on the final dialog, then click &quot;Start Server&quot; on 
+the Bitvise SSH Server Control Panel:</p>
+<p><img border="0" src="bv-5.png" width="426" height="125"></p>
+<h3>Download and Install PuTTY and PuTTYgen on Your Client Computer</h3>
+<p>If you haven't done so before, download and install the PuTTY client from
+<a href="http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html">here</a>.&nbsp; 
+This is a necessary step in order to convert the PEM file downloaded earlier 
+into a file that PuTTY (for remote terminal access) and WinSCP (for file 
+transfer) requires (a PPK file).</p>
+<p>Make sure you download both PuTTY and PuTTYgen.</p>
+<h4>Create a PPK File from the PEM File</h4>
+<p>Once downloaded, use PuTTYgen to convert your PEM file to a PPK file:</p>
+<p>Launch PuTTYgen.&nbsp; When the dialog box opens, select &quot;Load&quot;:</p>
+<p><img border="0" src="pem1.png" width="610" height="95"></p>
+<p>In the file dialog box, select &quot;All Files&quot;, then select your PEM file that 
+you downloaded earlier from Amazon.</p>
+<p>Click on &quot;Save private key&quot; to convert the PEM file to a PPK file:</p>
+<p><img border="0" src="pem2.png" width="605" height="56"></p>
+<p>Click on Yes to save without a passphrase (or enter a passphrase if you 
+wish.)</p>
+<p>Save the file.&nbsp; You are now ready to install WinSCP and connect to your 
+instance with WinSCP.</p>
+<h3>Open Port 22...</h3>
+<p>To SSH into your server, you'll need to open Port 22 on both the EC2 instance 
+and the Windows firewall.</p>
+<h4>...On the EC2 Instance</h4>
+<p>On the selected instance (make sure the instance is checked -- the blue 
+checkbox -- on the list of instances) click on the launch-wizard-x link next to 
+:Security groups&quot; (mine shows launch-wizard-6, yours will most likely be 
+different):</p>
+<p><img border="0" src="sec-1.png" width="376" height="32"></p>
+<p>After the security group page loads, click on the Inbound tab and click on 
+Edit:</p>
+<p><img border="0" src="sec-2.png" width="459" height="173"></p>
+<p>When the &quot;Edit inbound rules&quot; dialog appears, click on &quot;Add Rule&quot;:</p>
+<p><img border="0" src="sec-3.png" width="265" height="242"></p>
+<p>Add a rule for SSH:</p>
+<p><img border="0" src="sec-4.png" width="211" height="254"></p>
+<p>And specify the source as either Anywhere or, for added security, your 
+specific IP:</p>
+<p><img border="0" src="sec-5.png" width="1061" height="30"></p>
+<p>Click on the Save button.</p>
+<h4>...On Windows Firewall</h4>
+<p>Next, the Windows firewall needs to have this port open as well.&nbsp; While 
+Bitvise creates an inbound rule for the Bitvise SSH Server program, experience 
+has shown that this is not sufficient -- a rule has to be created for the port, 
+not program--I have no explanation for why this is.&nbsp; </p>
+<p>Launch Windows Firewall, then click on Inbound Rules:</p>
+<p><img border="0" src="fw-1.png" width="192" height="109"></p>
+<p>Next, click on New Rule and select Port:</p>
+<p><img border="0" src="fw-2.png" width="303" height="257"></p>
+<p>Click on Next, then enter the TCP port 22:</p>
+<p><img border="0" src="fw-3.png" width="349" height="205"></p>
+<p>Click next, then accept the default &quot;Allow the connection&quot;:</p>
+<p><img border="0" src="fw-6.png" width="463" height="221"></p>
+<p>Click next, accept the defaults for applying the rule:</p>
+<p><img border="0" src="fw-4.png" width="441" height="203"></p>
+<p>Click next, then enter a descriptive name for the rule, for example:</p>
+<p><img border="0" src="fw-5.png" width="454" height="52"></p>
+<p>Click Finish and close the Windows Firewall app.&nbsp; You should now be able 
+to SSH into your server!</p>
+<h3>Connect with WinSCP Client</h3>
+<p>If you haven't done so before, download and install the WinSCP client from
+<a href="https://winscp.net/eng/download.php">here</a>.</p>
+<p>Once installed, fire up the WinSCP app and enter the elastic (static) IP, 
+your username, password, and select the private key file (the ppk file created 
+with PuTTYGen):</p>
+<p><img border="0" src="scp-1.png" width="649" height="577"></p>
+<p>Save the configuration the click on &quot;Login&quot;.&nbsp; You will see a warning 
+message:</p>
+<h3><img border="0" src="winscp-1.png" width="876" height="253"></h3>
+<p>Click Yes.</p>
+<p>If you are still viewing the server's desktop via the remote desktop 
+connection, you should see a couple popup messages, similar to this:</p>
+<p><img border="0" src="scp-2.png" width="341" height="177"></p>
+<p>And on your PC, WinSCP should display both your PC's and the remote PC's file 
+system, similar to this:</p>
+<p><img border="0" src="scp-3.png" width="1020" height="577"></p>
+<p>You can now transfer files easily between your computer and the server.</p>
+<p><img border="0" src="note.png" width="24" height="32">&nbsp; You can also 
+drag-and-drop from other explorer windows into the server explorer listing in 
+WinSCP, which is convenient.</p>
+<p><img border="0" src="important.png" width="38" height="32"> WinSCP will cache 
+the folders and filenames on the remote server, so once you've browsed to a 
+folder (for the current session), changes that occur exclusively at the server 
+will not be reflected seen until you refresh the server's folder/file list using 
+the refresh icon <img border="0" src="scp-4.png" width="24" height="21"></p>
+<h3>PuTTY Integration</h3>
+<p>Under the Options -&gt; Preferences tab, select the Intregration -&gt; Applications 
+item.&nbsp; Note the PuTTY path.&nbsp; </p>
+<p><img border="0" src="scp-5.png" width="617" height="383"></p>
+<p>If you have installed PuTTY elsewhere, you'll need to change this path.</p>
+<p>From the Commands menu, select &quot;Open in PuTTY&quot;:</p>
+<p><img border="0" src="scp-6.png" width="364" height="361"></p>
+<p>Click Yes to the PuTTY Security Alert question.&nbsp; A terminal window 
+should open.</p>
+<p><img border="0" src="key-small.jpg" width="94" height="33">Now here's a 
+trick.&nbsp; </p>
+<ol>
+	<li>At the prompt for your password, copy your password <i>on your PC</i> to 
+	the clipboard.&nbsp; </li>
+	<li>On the PuTTY terminal window, right-click with the mouse <i>once</i>, 
+	then press Enter.</li>
+</ol>
+<p>The PuTTY terminal will copy the clipboard contents from your computer into 
+the terminal window with a right mouse click.&nbsp; Conversely, if you wish to 
+copy information from the PuTTY terminal to your PC, highlight the desired text 
+with your mouse, then <i>left-click</i>.&nbsp; This copies the highlighted 
+contents to <i>your</i> PC's clipboard.</p>
+<p>After logging in, you can access your server through the command line, for 
+example:</p>
+<p><img border="0" src="putty-1.png" width="841" height="527"></p>
+<p>Note that you will not be able to launch UI applications (they won't appear 
+on your remote desktop session), but a console session through PuTTY still has 
+its uses, though granted, this is typically a lot more useful when connecting to 
+a Linux instance!</p>
+<p>Exit the terminal session by typing &quot;exit&quot; at the command prompt (the 
+graceful way) or simply closing the PuTTY terminal window (the less graceful 
+way.)</p>
+<p><img border="0" src="note.png" width="24" height="32"> You can also open a 
+terminal window by launching PuTTY directly, but you still have to specify the 
+private key file, which is done in the Connection -&gt; SSH -&gt; Auth configuration 
+page:</p>
+<p><img border="0" src="putty-2.png" width="618" height="549"></p>
+<h3>Some Security Measures</h3>
+<p>Some food for thought.</p>
+<h4>Change the SSH port from 22 to something else</h4>
+<p>Port 22 for SSH is the standard SSH port.&nbsp; If you want to add a small 
+measure of security, configure the Bitvise SSH server to listen to a different 
+port.&nbsp; You'll also need to change your WinSCP connection information to the 
+new port</p>
+<h4>Turn of the SSH server when not in use</h4>
+<p>Unless you need SSH always on, I prefer to click on the &quot;Stop Server&quot; link on 
+the Bitvise SSH Server Control Panel.&nbsp; This means I have to remote desktop 
+in to the server to re-enable it, but it's an added measure of security to not 
+have the SSH port always open and listening for connections.&nbsp; If left on, I 
+will often see unscrupulous attempts to break into the server!</p>
+<h2>Register A Domain for Your Server</h2>
+<p>Use your favorite domain registrar to create an A record for your server.&nbsp; 
+I like namecheap.com, so the screenshots will be from their website.&nbsp; 
+You'll need to get to the &quot;manage your domain&quot;, and usually the &quot;advanced DNS&quot; 
+page, or something similar.</p>
+<p>Create or edit the CNAME record, pointing to the public DNS that you can find 
+on your Amazon instance page:</p>
+<p><img border="0" src="dns-1.png" width="537" height="88"></p>
+<p>Create an &quot;A Record&quot; that is simply the elastic IP of the your server.</p>
+<p>Since we're here, let's also create the MX record.&nbsp; Namecheap has an MXE 
+record option (MX Easy) which simply needs the elastic IP of your server.&nbsp; 
+When you're all done, you have the following records set up:</p>
+<p><img border="0" src="dns-2.png" width="942" height="153"></p>
+<p>Don't forget to save your changes--check that you've saved both the host 
+records and the mail settings record.</p>
+<h3>Test Your Server</h3>
+<p>Once you've registered domain, created the appropriate records, and waited 
+the obligatoy 48-72 hours for your domain registration to percolate up to the 
+name servers, you can test some of your record settings.&nbsp; </p>
+<h4>Open Port 80</h4>
+<p>This involves opening, for now, port 80.&nbsp; Following the instructions we 
+used for opening port 22, also open port 80.&nbsp; Notice that for the EC2 
+instance, you can select from the predefined &quot;HTTP&quot; type:</p>
+<p><img border="0" src="http-1.png" width="1125" height="35"></p>
+<p>Don't forget to open this port on the Windows firewall as well.</p>
+<h3>Test Your Domain Name with a Simple Server</h3>
+<p>Here's a simple server you can use to test your domain.&nbsp; All it does is 
+emit &quot;Hello World!&quot; regardless of what page you browse to:</p>
+<pre>using System;
+using System.IO;
+using System.Net;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace TheUtmostBasicWebServer
+{
+  class Program
+  {
+    static Semaphore sem;
+
+    static void Main(string[] args)
+    {
+      // Supports 20 simultaneous connections.
+      sem = new Semaphore(20, 20);
+      HttpListener listener = new HttpListener();
+      listener.Prefixes.Add([YOUR PRIVATE IP HERE]);
+      listener.Start();
+      
+      Task.Run(() =&gt;
+      {
+        while (true)
+        {
+          sem.WaitOne();
+          StartConnectionListener(listener);
+        }
+      });
+
+      Console.WriteLine(&quot;Press a key to exit the server.&quot;);
+      Console.ReadLine();
+    }
+
+    static async void StartConnectionListener(HttpListener listener)
+    {
+      HttpListenerContext context = await listener.GetContextAsync();
+      sem.Release();
+      HttpListenerResponse response = context.Response;
+      Console.WriteLine(&quot;URL: &quot; + context.Request.Url);
+      string text = &quot;Hello World!&quot;;
+      byte[] data = Encoding.UTF8.GetBytes(text);
+      response.ContentType = &quot;text/html&quot;;
+      response.ContentLength64 = data.Length;
+      response.OutputStream.Write(data, 0, data.Length);
+      response.ContentEncoding = Encoding.UTF8;
+      response.StatusCode = 200;
+      response.OutputStream.Close();
+    }
+  }
+}</pre>
+<p><img border="0" src="important.png" width="38" height="32">&nbsp; In the code 
+above, replace [YOUR PRIVATE IP HERE] with, you guessed it, your private IP, in 
+the form &quot;<a href="http://x.x.x.x/">http://x.x.x.x/</a>&quot; (the trailing forward 
+slash is critical).&nbsp; Your private IP is show on your EC2 instance page 
+after you've selected the instance, for example:</p>
+<p><img border="0" src="ec2-29.png" width="487" height="158"></p>
+<p>You can transfer the exe with WinSCP and then launch the server in a PuTTY 
+session.&nbsp; Once started, you should see something similar to this (of 
+course, your domain name will be different):</p>
+<p><img border="0" src="server-1.png" width="652" height="254"></p>
+<p>(What's Poloron?&nbsp; Well, you'll have to wait until I write that article.)</p>
+<p>Note that the browser always requests a &quot;favicon.ico&quot; -- the server above 
+doesn't return a valid icon, so you'll see this request always.</p>
+<p><img border="0" src="note.png" width="24" height="32"> Also remember that as 
+soon you terminate the PuTTY session, the server will be terminated.</p>
+<h2>Get a Mail Server Running</h2>
+<p>While the instructions below are simple, it's been quite a struggle to get 
+all the pieces in place for setting up a mail server, so hopefully this will 
+save you much grief.&nbsp; A mail server is critical for the final step of this 
+article, which is to set up a valid SSL certificate.&nbsp; The mail server is 
+necessary because part of the authentication/validation process for setting up 
+an SSL certificate requires e-mailing the certificate to an account on the 
+domain pointing to your server.</p>
+<p>The mail server we'll be configuring in this article is Mail Enable.&nbsp; 
+You may want to look at <a href="https://www.hmailserver.com/">hMailServer</a> 
+as well as an alternative.&nbsp; Download the free edition of MailEnable from
+<a href="http://www.mailenable.com/download.asp">their website</a>.&nbsp; I 
+prefer to do this from my computer, and then SCP it to the server.&nbsp; The 
+file name is &quot;Standard901.exe&quot; -- rather descriptive, isn't it?</p>
+<p>Once you've moved the file over to your server, install MailEnable using your 
+remote desktop connection.&nbsp; Click OK to the note and warning:</p>
+<p><img border="0" src="me-1.png" width="311" height="207">
+<img border="0" src="me-2.png" width="309" height="205"></p>
+<p>After providing some registration information, select only the mail server 
+component:</p>
+<p><img border="0" src="me-3.png" width="483" height="367"></p>
+<p>Choose your post office name and password.&nbsp; Here I'm using the domain 
+name, since it's the only post office I'll be running on this server:</p>
+<p><img border="0" src="me-4.png" width="488" height="369"></p>
+<p>Enter the domain name for your server, leaving the other fields as is:</p>
+<p><img border="0" src="me-5.png" width="487" height="368"></p>
+<p>Once Mail Enable has finished installing, click on the Start icon and type 
+&quot;mail&quot;.&nbsp; I usually pin the icon to the taskbar (right-click on the 
+MailEnable entry) for easier access:</p>
+<p><img border="0" src="me-6.png" width="308" height="181"></p>
+<p>Left-click to open the administration window.</p>
+<p>Notice that under Post Offices, for the post office name, there is already a 
+mailbox for &quot;Postmaster&quot;:</p>
+<p><img border="0" src="me-7.png" width="803" height="113"></p>
+<h3>Open POP3 and SMTP Ports</h3>
+<p>On both the Amazon instance security group settings and the Windows Firewall, 
+as described earler, open the following inbound ports:</p>
+<ul>
+	<li>25 - SMTP</li>
+	<li>110 - POP3</li>
+	<li>587 - For mail submission (read more
+	<a href="https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol">here</a>)</li>
+</ul>
+<p><img border="0" src="ec2-30.png" width="1120" height="69"></p>
+<p>&nbsp;&nbsp; <img border="0" src="ec2-31.png" width="1057" height="30"></p>
+<h3>Enable Mail Submission</h3>
+<p>Enable mail submission on Mail Enable by:</p>
+<ol>
+	<li>right-clicking on the the SMTP server entry in the tree view</li>
+	<li>Selecting the Inbound tab</li>
+	<li>Checking &quot;Listen on alternate port&quot;</li>
+	<li>Entering 587 as the port number</li>
+</ol>
+<p><img border="0" src="me-12.png" width="766" height="458"></p>
+<h3>Set a Password for the Postmaster mailbox</h3>
+<p>Double-click on the Postmaster mailbox.&nbsp; In the General tab, create a 
+password for this mailbox.&nbsp; </p>
+<p><img border="0" src="me-11.png" width="298" height="214"></p>
+<p><img border="0" src="important.png" width="38" height="32">&nbsp; You'll be 
+using this password later on for authenticating with the server to send/receive 
+emails.</p>
+<h3>Try Sending Postmaster an Email</h3>
+<p>Using your favorite email app, send a test email to the postmaster mailbox, 
+something like this:</p>
+<p><img border="0" src="me-8.png" width="192" height="185"></p>
+<p>Wait a few seconds the click on the refresh button in the Mail Enable Admin 
+UI.&nbsp; You should see that the message has been received:</p>
+<p><img border="0" src="me-9.png" width="407" height="48"></p>
+<p>Double-click on the Postmaster mailbox, then click on the &quot;Messages&quot; tab.&nbsp; 
+Double-click on the message filename and you'll be able to see the contents:</p>
+<p><img border="0" src="me-10.png" width="472" height="412"></p>
+<h3>Setting Up Outlook to Send/Receive Email</h3>
+<p>We'll set up Outlook now so that you can send and receive email via your 
+postmaster account.&nbsp; I'm using Outlook 2010, other versions may vary 
+slightly in the UI presentation (but they look the same as they did 10 years ago 
+to me!)</p>
+<p>First, click on the File tab and then click on Add Account:</p>
+<p><img border="0" src="outlook-4.png" width="290" height="133"></p>
+<p>Select &quot;manually configure...&quot;</p>
+<p><img border="0" src="ol-1.png" width="444" height="34"></p>
+<p>Select &quot;Internet E-Mail&quot;:</p>
+<p><img border="0" src="ol-2.png" width="460" height="60"></p>
+<p>Enter your domain name (not mine) and the password you created earlier for 
+the postmaster account:</p>
+<p><img border="0" src="ol-3.png" width="379" height="334"></p>
+<p>Before clicking Next, click on &quot;More Settings&quot;.&nbsp; On the Outgoing Server 
+tab, select &quot;My outgoing server (SMTP) requires authentication&quot;:</p>
+<p><img border="0" src="ol-4.png" width="373" height="117"></p>
+<p>On the Advanced tab, select port 587 as the outgoing SMTP server port:</p>
+<p><img border="0" src="ol-5.png" width="444" height="356"></p>
+<p>Now click on &quot;Next&quot;.&nbsp; Outlook will test your settings, and after a 
+minute or so, should display:</p>
+<p><img border="0" src="ol-6.png" width="559" height="176"></p>
+<p>Get all the email off your server by clicking on the Send/Receive tab and 
+then Send/Receive All Folders:</p>
+<p><img border="0" src="ol-8.png" width="254" height="172"></p>
+<p>Once sync'd, check your junk email folder for the test message that you sent 
+earlier.&nbsp; In your inbox should also be a test message that Outlook sent.</p>
+<p><img border="0" src="ol-7.png" width="479" height="284"></p>
+<p>Send a test email to another account (for example, the account you used to 
+send a test email to your server):</p>
+<p><img border="0" src="ol-9.png" width="345" height="375"></p>
+<p>I use GMail, and within a few seconds my test email is received:</p>
+<p><img border="0" src="ol-10.png" width="295" height="142"></p>
+<p>Check your spam/junk folder if you don't receive an email in the your usual 
+inbox.&nbsp; The mailbox name &quot;postmaster&quot; is often used as a filter for junk 
+mail!</p>
+<p>Congratulations -- you've now set up Mail Enable as a mail server and Outlook 
+to send / receive emails using your mail server.&nbsp; You can now set up 
+additional accounts, etc.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+</body>
+
+</html>
