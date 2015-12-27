@@ -10,8 +10,75 @@
 
 <p>Setting up an Amazon EC2 Instance with an SSH Server, Mail Server, and an SSL 
 Certificate</p>
-<!-- INSERT contents -->
-<h2>Introduction</h2>
+<h1>Contents</h1><ul>
+<li><a href="#Introduction0">Introduction</a></li>
+<li><a href="#Pre-Step:CreateanAWSaccount1">Pre-Step: Create an AWS account</a></li>
+<li><a href="#CreateanAWSFreeTierInstance2">Create an AWS Free Tier Instance</a></li>
+<ul>
+<li><a href="#CreateaKeyPairforRemoteDesktopAccessandtheAdministratorPassword3">Create a Key Pair for Remote Desktop Access and the Administrator Password</a></li>
+<li><a href="#CreateanElasticIP4">Create an Elastic IP</a></li>
+<li><a href="#AssociatetheElasticIPwiththeInstance5">Associate the Elastic IP with the Instance</a></li>
+<li><a href="#GetthePasswordforYourAdministratorAccount6">Get the Password for Your Administrator Account</a></li>
+<li><a href="#ConnecttoYourInstance7">Connect to Your Instance</a></li>
+</ul>
+<li><a href="#SetupforSecureCopy(SCP)8">Setup for Secure Copy (SCP)</a></li>
+<ul>
+<li><a href="#InstallingtheBitviseSSHServer9">Installing the Bitvise SSH Server</a></li>
+<li><a href="#DownloadandInstallPuTTYandPuTTYgenonYourClientComputer10">Download and Install PuTTY and PuTTYgen on Your Client Computer</a></li>
+<ul>
+<li><a href="#CreateaPPKFilefromthePEMFile11">Create a PPK File from the PEM File</a></li>
+</ul>
+<li><a href="#OpenPort22...12">Open Port 22...</a></li>
+<ul>
+<li><a href="#...OntheEC2Instance13">...On the EC2 Instance</a></li>
+<li><a href="#...OnWindowsFirewall14">...On Windows Firewall</a></li>
+</ul>
+<li><a href="#ConnectwithWinSCPClient15">Connect with WinSCP Client</a></li>
+<li><a href="#PuTTYIntegration17">PuTTY Integration</a></li>
+<li><a href="#SomeSecurityMeasures18">Some Security Measures</a></li>
+<ul>
+	<li><a href="#ChangetheSSHportfrom22tosomethingelse19">Change the SSH port from 22 to something else</a></li>
+	<li><a href="#TurnoftheSSHserverwhennotinuse20">Turn of the SSH server when not in use</a></li>
+</ul>
+<li><a href="#X21">X</a></li>
+</ul>
+<li><a href="#RegisterADomainforYourServer22">Register A Domain for Your Server</a></li>
+<ul>
+<li><a href="#TestYourServer23">Test Your Server</a></li>
+<ul>
+<li><a href="#OpenPort8024">Open Port 80</a></li>
+<li><a href="#SimpleC#Server25">Simple C# Server</a></li>
+</ul>
+<li><a href="#X26">X</a></li>
+</ul>
+<li><a href="#GetaMailServerRunning27">Get a Mail Server Running</a></li>
+<ul>
+<li><a href="#OpenPOP3andSMTPPorts28">Open POP3 and SMTP Ports</a></li>
+<li><a href="#EnableMailSubmission29">Enable Mail Submission</a></li>
+<li><a href="#SetaPasswordforthePostmastermailbox30">Set a Password for the Postmaster mailbox</a></li>
+<li><a href="#TrySendingPostmasteranEmail31">Try Sending Postmaster an Email</a></li>
+<li><a href="#SettingUpOutlooktoSend/ReceiveEmail32">Setting Up Outlook to Send/Receive Email</a></li>
+<li><a href="#RetrieveEmails33">Retrieve Emails</a></li>
+<li><a href="#SendEmails34">Send Emails</a></li>
+</ul>
+<li><a href="#SettingupanSSLCertificate35">Setting up an SSL Certificate</a></li>
+<ul>
+<li><a href="#GenerateTheCSR36">Generate The CSR</a></li>
+<li><a href="#RegistertheCSRwithRapidSSL37">Register the CSR with RapidSSL</a></li>
+<li><a href="#ApprovetheCertificateRequest38">Approve the Certificate Request</a></li>
+<li><a href="#ImporttheCertificationonYourServer39">Import the Certification on Your Server</a></li>
+<li><a href="#CreateaPrivateKeyfortheCertificate40">Create a Private Key for the Certificate</a></li>
+<li><a href="#ExporttheCertificateWithitsPrivateKey41">Export the Certificate With its Private Key</a></li>
+<li><a href="#ImporttheKey'dCertificateinTrustedRootCertificateAuthority42">Import the Key'd Certificate in Trusted Root Certificate Authority</a></li>
+<li><a href="#BindtheCertificatetoPort44343">Bind the Certificate to Port 443</a></li>
+<li><a href="#AddPort443totheEC2andWindowFirewallInboundRules44">Add Port 443 to the EC2 and Window Firewall Inbound Rules</a></li>
+<li><a href="#VerifyYouHaveHTTPSConnectivity45">Verify You Have HTTPS Connectivity</a></li>
+</ul>
+<li><a href="#Conclusion46">Conclusion</a></li>
+<li><a href="#References47">References</a></li>
+</ul>
+
+<h2><a name="Introduction0">Introduction</a></h2>
 <p>This article is a complete, from start to finish, tutorial on:</p>
 <ul>
 	<li>Setting up an Amazon EC2 Windows free tier instance</li>
@@ -46,13 +113,13 @@ seeing here is the result of lots of different pieces and time figuring out all
 this stuff, especially the pain points of setting up an email server and 
 obtaining an SSL certificate (which requires an email server to the instance 
 domain!)</p>
-<h2>Pre-Step: Create an AWS account</h2>
+<h2><a name="Pre-Step:CreateanAWSaccount1">Pre-Step: Create an AWS account</a></h2>
 <p>Before proceeding, you will need an AWS account.&nbsp; If you do not have 
 one, create one now <a href="http://aws.amazon.com/">here</a>.&nbsp; Once you 
 have created an account, you will be presented with a huge list of Amazon Web 
 Services (AWS).&nbsp; Select the first one, EC@ Virtual Servers in the Cloud:</p>
 <p><img border="0" src="ec2-27.png" width="407" height="330"></p>
-<h2>Create an AWS Free Tier Instance</h2>
+<h2><a name="CreateanAWSFreeTierInstance2">Create an AWS Free Tier Instance</a></h2>
 <p>From the AWS EC2 Dashboard, click on the Launch Instance button:</p>
 <p><img border="0" src="ec2-28.png" width="541" height="493"></p>
 <p>Choose the Microsoft Windows Server 2012 R2 Base (Windows Free tier eligible) 
@@ -66,7 +133,7 @@ Amazon Machine Image (AMI)</p>
 <p><img border="0" src="ec2-4.png" width="700" height="53"></p>
 <p>On the next screen, click on Launch (we'll edit security settings later.</p>
 <p><img border="0" src="ec2-5.png" width="301" height="54"></p>
-<h3>Create a Key Pair for Remote Desktop Access and the Administrator Password</h3>
+<h3><a name="CreateaKeyPairforRemoteDesktopAccessandtheAdministratorPassword3">Create a Key Pair for Remote Desktop Access and the Administrator Password</a></h3>
 <p>Next, we create a key pair for Remote Desktop Access (RDP).&nbsp; A dialog 
 pops up saying &quot;Select an existing key pair or create a new key pair&quot;.&nbsp; 
 Select &quot;Create a new key pair&quot; and enter a key pair name, then click on Download 
@@ -88,7 +155,7 @@ Instances:</p>
 passed:&quot;</p>
 <p><img border="0" src="ec2-10.png" width="336" height="90"></p>
 <p><font color="#FF0000"><b>REMEMBER THE INSTANCE ID!</b></font></p>
-<h3>Create an Elastic IP</h3>
+<h3><a name="CreateanElasticIP4">Create an Elastic IP</a></h3>
 <p>Once the instance is initialized, we will create an elastic IP (a static IP) 
 for this instance so that we can associate a domain name with the IP address of 
 our instance.&nbsp; Click on &quot;Elastic IPs&quot; from the menubar on the left:</p>
@@ -103,7 +170,7 @@ IPs:</p>
 <p>Note that there is no instance associated with this elastic IP.&nbsp; Select 
 the newly created elastic IP (the checkbox on the left):</p>
 <p><img border="0" src="ec2-17.png" width="234" height="85"></p>
-<h3>Associate the Elastic IP with the Instance</h3>
+<h3><a name="AssociatetheElasticIPwiththeInstance5">Associate the Elastic IP with the Instance</a></h3>
 <p>Then, from the Action menu, select &quot;Associate Address&quot;:</p>
 <p><img border="0" src="ec2-18.png" width="441" height="178"></p>
 <p>Did you remember the instance ID?&nbsp; Click on the box to the right of 
@@ -112,7 +179,7 @@ the newly created elastic IP (the checkbox on the left):</p>
 <p>Then click on &quot;Associate&quot;:</p>
 <p><img border="0" src="ec2-20.png" width="196" height="58"></p>
 <p><font color="#FF0000"><b>REMEMBER YOUR ELASTIC IP!</b></font></p>
-<h3>Get the Password for Your Administrator Account</h3>
+<h3><a name="GetthePasswordforYourAdministratorAccount6">Get the Password for Your Administrator Account</a></h3>
 <p>Click on EC2 Dashboard at the top of the menubar on the left:</p>
 <p><img border="0" src="ec2-21.png" width="187" height="167"></p>
 <p>Then click on &quot;Running Instances&quot; (I have 4 instances, your number will be 1 
@@ -132,7 +199,7 @@ downloaded when you created the instance:</p>
 <p>Once the file is selected, click on &quot;Decrypt Password&quot;:</p>
 <p><img border="0" src="ec2-26.png" width="187" height="46"></p>
 <p><font color="#FF0000"><b>SAVE THIS PASSWORD!</b></font></p>
-<h3>Connect to Your Instance</h3>
+<h3><a name="ConnecttoYourInstance7">Connect to Your Instance</a></h3>
 <p>Now you can either download the RDP file or launch Remote Desktop Connection 
 yourself.&nbsp; If you choose the latter, enter the IP address for the computer 
 name and, when you expand &quot;Options&quot;, enter the username and decide whether to 
@@ -148,10 +215,10 @@ computer&quot; then click on the Yes button to proceed with the connection.</p>
 connection.&nbsp; When it's done, you'll see the desktop (bigger than this 
 reduced screenshot here!)</p>
 <p><img border="0" src="rdp-2.png" width="313" height="244"></p>
-<h2>Setup for Secure Copy (SCP)</h2>
+<h2><a name="SetupforSecureCopy(SCP)8">Setup for Secure Copy (SCP)</a></h2>
 <p>We could install FileZilla and set up FTP, but I prefer to use an SSH server 
 as it provides both file copy and terminal (command prompt) connections.</p>
-<h3>Installing the Bitvise SSH Server</h3>
+<h3><a name="InstallingtheBitviseSSHServer9">Installing the Bitvise SSH Server</a></h3>
 <p>It's a lot easier to manage your instance with an SSH server.&nbsp; You can 
 access the command line and transfer files very easily with tools such as PuTTY 
 and WinSCP.&nbsp; This section describes how to install the
@@ -181,14 +248,14 @@ name:</p>
 <p>Once installed, click OK on the final dialog, then click &quot;Start Server&quot; on 
 the Bitvise SSH Server Control Panel:</p>
 <p><img border="0" src="bv-5.png" width="426" height="125"></p>
-<h3>Download and Install PuTTY and PuTTYgen on Your Client Computer</h3>
+<h3><a name="DownloadandInstallPuTTYandPuTTYgenonYourClientComputer10">Download and Install PuTTY and PuTTYgen on Your Client Computer</a></h3>
 <p>If you haven't done so before, download and install the PuTTY client from
 <a href="http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html">here</a>.&nbsp; 
 This is a necessary step in order to convert the PEM file downloaded earlier 
 into a file that PuTTY (for remote terminal access) and WinSCP (for file 
 transfer) requires (a PPK file).</p>
 <p>Make sure you download both PuTTY and PuTTYgen.</p>
-<h4>Create a PPK File from the PEM File</h4>
+<h4><a name="CreateaPPKFilefromthePEMFile11">Create a PPK File from the PEM File</a></h4>
 <p>Once downloaded, use PuTTYgen to convert your PEM file to a PPK file:</p>
 <p>Launch PuTTYgen.&nbsp; When the dialog box opens, select &quot;Load&quot;:</p>
 <p><img border="0" src="pem1.png" width="610" height="95"></p>
@@ -200,10 +267,10 @@ you downloaded earlier from Amazon.</p>
 wish.)</p>
 <p>Save the file.&nbsp; You are now ready to install WinSCP and connect to your 
 instance with WinSCP.</p>
-<h3>Open Port 22...</h3>
+<h3><a name="OpenPort22...12">Open Port 22...</a></h3>
 <p>To SSH into your server, you'll need to open Port 22 on both the EC2 instance 
 and the Windows firewall.</p>
-<h4>...On the EC2 Instance</h4>
+<h4><a name="...OntheEC2Instance13">...On the EC2 Instance</a></h4>
 <p>On the selected instance (make sure the instance is checked -- the blue 
 checkbox -- on the list of instances) click on the launch-wizard-x link next to 
 :Security groups&quot; (mine shows launch-wizard-6, yours will most likely be 
@@ -220,7 +287,7 @@ Edit:</p>
 specific IP:</p>
 <p><img border="0" src="sec-5.png" width="1061" height="30"></p>
 <p>Click on the Save button.</p>
-<h4>...On Windows Firewall</h4>
+<h4><a name="...OnWindowsFirewall14">...On Windows Firewall</a></h4>
 <p>Next, the Windows firewall needs to have this port open as well.&nbsp; While 
 Bitvise creates an inbound rule for the Bitvise SSH Server program, experience 
 has shown that this is not sufficient -- a rule has to be created for the port, 
@@ -239,7 +306,7 @@ not program--I have no explanation for why this is.&nbsp; </p>
 <p><img border="0" src="fw-5.png" width="454" height="52"></p>
 <p>Click Finish and close the Windows Firewall app.&nbsp; You should now be able 
 to SSH into your server!</p>
-<h3>Connect with WinSCP Client</h3>
+<h3><a name="ConnectwithWinSCPClient15">Connect with WinSCP Client</a></h3>
 <p>If you haven't done so before, download and install the WinSCP client from
 <a href="https://winscp.net/eng/download.php">here</a>.</p>
 <p>Once installed, fire up the WinSCP app and enter the elastic (static) IP, 
@@ -248,7 +315,7 @@ with PuTTYGen):</p>
 <p><img border="0" src="scp-1.png" width="649" height="577"></p>
 <p>Save the configuration the click on &quot;Login&quot;.&nbsp; You will see a warning 
 message:</p>
-<h3><img border="0" src="winscp-1.png" width="876" height="253"></h3>
+<p><img border="0"src="winscp-1.png"width="876"height="253"></p>
 <p>Click Yes.</p>
 <p>If you are still viewing the server's desktop via the remote desktop 
 connection, you should see a couple popup messages, similar to this:</p>
@@ -265,7 +332,7 @@ the folders and filenames on the remote server, so once you've browsed to a
 folder (for the current session), changes that occur exclusively at the server 
 will not be reflected seen until you refresh the server's folder/file list using 
 the refresh icon <img border="0" src="scp-4.png" width="24" height="21"></p>
-<h3>PuTTY Integration</h3>
+<h3><a name="PuTTYIntegration17">PuTTY Integration</a></h3>
 <p>Under the Options -&gt; Preferences tab, select the Intregration -&gt; Applications 
 item.&nbsp; Note the PuTTY path.&nbsp; </p>
 <p><img border="0" src="scp-5.png" width="617" height="383"></p>
@@ -302,21 +369,21 @@ terminal window by launching PuTTY directly, but you still have to specify the
 private key file, which is done in the Connection -&gt; SSH -&gt; Auth configuration 
 page:</p>
 <p><img border="0" src="putty-2.png" width="618" height="549"></p>
-<h3>Some Security Measures</h3>
+<h3><a name="SomeSecurityMeasures18">Some Security Measures</a></h3>
 <p>Some food for thought.</p>
-<h4>Change the SSH port from 22 to something else</h4>
+<h4><a name="ChangetheSSHportfrom22tosomethingelse19">Change the SSH port from 22 to something else</a></h4>
 <p>Port 22 for SSH is the standard SSH port.&nbsp; If you want to add a small 
 measure of security, configure the Bitvise SSH server to listen to a different 
 port.&nbsp; You'll also need to change your WinSCP connection information to the 
 new port</p>
-<h4>Turn of the SSH server when not in use</h4>
+<h4><a name="TurnoftheSSHserverwhennotinuse20">Turn of the SSH server when not in use</a></h4>
 <p>Unless you need SSH always on, I prefer to click on the &quot;Stop Server&quot; link on 
 the Bitvise SSH Server Control Panel.&nbsp; This means I have to remote desktop 
 in to the server to re-enable it, but it's an added measure of security to not 
 have the SSH port always open and listening for connections.&nbsp; If left on, I 
 will often see unscrupulous attempts to break into the server!</p>
-<h3>X</h3>
-<h2>Register A Domain for Your Server</h2>
+<h3><a name="X21">X</a></h3>
+<h2><a name="RegisterADomainforYourServer22">Register A Domain for Your Server</a></h2>
 <p>Use your favorite domain registrar to create an A record for your server.&nbsp; 
 I like namecheap.com, so the screenshots will be from their website.&nbsp; 
 You'll need to get to the &quot;manage your domain&quot;, and usually the &quot;advanced DNS&quot; 
@@ -331,17 +398,17 @@ When you're all done, you have the following records set up:</p>
 <p><img border="0" src="dns-2.png" width="942" height="153"></p>
 <p>Don't forget to save your changes--check that you've saved both the host 
 records and the mail settings record.</p>
-<h3>Test Your Server</h3>
+<h3><a name="TestYourServer23">Test Your Server</a></h3>
 <p>Once you've registered domain, created the appropriate records, and waited 
 the obligatoy 48-72 hours for your domain registration to percolate up to the 
 name servers, you can test some of your record settings.&nbsp; </p>
-<h4>Open Port 80</h4>
+<h4><a name="OpenPort8024">Open Port 80</a></h4>
 <p>This involves opening, for now, port 80.&nbsp; Following the instructions we 
 used for opening port 22, also open port 80.&nbsp; Notice that for the EC2 
 instance, you can select from the predefined &quot;HTTP&quot; type:</p>
 <p><img border="0" src="http-1.png" width="1125" height="35"></p>
 <p>Don't forget to open this port on the Windows firewall as well.</p>
-<h4>Simple C# Server</h4>
+<h4><a name="SimpleC#Server25">Simple C# Server</a></h4>
 <p>Here's a simple server you can use to test your domain.&nbsp; All it does is 
 emit &quot;Hello World!&quot; regardless of what page you browse to:</p>
 <pre>using System;
@@ -410,8 +477,8 @@ course, your domain name will be different):</p>
 doesn't return a valid icon, so you'll see this request always.</p>
 <p><img border="0" src="note.png" width="24" height="32"> Also remember that as 
 soon you terminate the PuTTY session, the server will be terminated.</p>
-<h3>X</h3>
-<h2>Get a Mail Server Running</h2>
+<h3><a name="X26">X</a></h3>
+<h2><a name="GetaMailServerRunning27">Get a Mail Server Running</a></h2>
 <p>While the instructions below are simple, it's been quite a struggle to get 
 all the pieces in place for setting up a mail server, so hopefully this will 
 save you much grief.&nbsp; A mail server is critical for the final step of this 
@@ -445,7 +512,7 @@ MailEnable entry) for easier access:</p>
 <p>Notice that under Post Offices, for the post office name, there is already a 
 mailbox for &quot;Postmaster&quot;:</p>
 <p><img border="0" src="me-7.png" width="803" height="113"></p>
-<h3>Open POP3 and SMTP Ports</h3>
+<h3><a name="OpenPOP3andSMTPPorts28">Open POP3 and SMTP Ports</a></h3>
 <p>On both the Amazon instance security group settings and the Windows Firewall, 
 as described earler, open the following inbound ports:</p>
 <ul>
@@ -456,7 +523,7 @@ as described earler, open the following inbound ports:</p>
 </ul>
 <p><img border="0" src="ec2-30.png" width="1120" height="69"></p>
 <p>&nbsp;&nbsp; <img border="0" src="ec2-31.png" width="1057" height="30"></p>
-<h3>Enable Mail Submission</h3>
+<h3><a name="EnableMailSubmission29">Enable Mail Submission</a></h3>
 <p>Enable mail submission on Mail Enable by:</p>
 <ol>
 	<li>right-clicking on the the SMTP server entry in the tree view</li>
@@ -465,14 +532,14 @@ as described earler, open the following inbound ports:</p>
 	<li>Entering 587 as the port number</li>
 </ol>
 <p><img border="0" src="me-12.png" width="766" height="458"></p>
-<h3>Set a Password for the Postmaster mailbox</h3>
+<h3><a name="SetaPasswordforthePostmastermailbox30">Set a Password for the Postmaster mailbox</a></h3>
 <p>Double-click on the Postmaster mailbox.&nbsp; In the General tab, create a 
 password for this mailbox.&nbsp; </p>
 <p><img border="0" src="me-11.png" width="298" height="214"></p>
 <p><img border="0" src="important.png" width="38" height="32">&nbsp; You'll be 
 using this password later on for authenticating with the server to send/receive 
 emails.</p>
-<h3>Try Sending Postmaster an Email</h3>
+<h3><a name="TrySendingPostmasteranEmail31">Try Sending Postmaster an Email</a></h3>
 <p>Using your favorite email app, send a test email to the postmaster mailbox, 
 something like this:</p>
 <p><img border="0" src="me-8.png" width="192" height="185"></p>
@@ -482,7 +549,7 @@ UI.&nbsp; You should see that the message has been received:</p>
 <p>Double-click on the Postmaster mailbox, then click on the &quot;Messages&quot; tab.&nbsp; 
 Double-click on the message filename and you'll be able to see the contents:</p>
 <p><img border="0" src="me-10.png" width="472" height="412"></p>
-<h3>Setting Up Outlook to Send/Receive Email</h3>
+<h3><a name="SettingUpOutlooktoSend/ReceiveEmail32">Setting Up Outlook to Send/Receive Email</a></h3>
 <p>We'll set up Outlook now so that you can send and receive email via your 
 postmaster account.&nbsp; I'm using Outlook 2010, other versions may vary 
 slightly in the UI presentation (but they look the same as they did 10 years ago 
@@ -504,14 +571,14 @@ tab, select &quot;My outgoing server (SMTP) requires authentication&quot;:</p>
 <p>Now click on &quot;Next&quot;.&nbsp; Outlook will test your settings, and after a 
 minute or so, should display:</p>
 <p><img border="0" src="ol-6.png" width="559" height="176"></p>
-<h3>Retrieve Emails</h3>
+<h3><a name="RetrieveEmails33">Retrieve Emails</a></h3>
 <p>Get all the email off your server by clicking on the Send/Receive tab and 
 then Send/Receive All Folders:</p>
 <p><img border="0" src="ol-8.png" width="254" height="172"></p>
 <p>Once sync'd, check your junk email folder for the test message that you sent 
 earlier.&nbsp; In your inbox should also be a test message that Outlook sent.</p>
 <p><img border="0" src="ol-7.png" width="479" height="284"></p>
-<h3>Send Emails</h3>
+<h3><a name="SendEmails34">Send Emails</a></h3>
 <p>Send a test email to another account (for example, the account you used to 
 send a test email to your server):</p>
 <p><img border="0" src="ol-9.png" width="345" height="375"></p>
@@ -523,7 +590,7 @@ mail!</p>
 <p>Congratulations -- you've now set up Mail Enable as a mail server and Outlook 
 to send / receive emails using your mail server.&nbsp; You can now set up 
 additional accounts, etc.</p>
-<h2>Setting up an SSL Certificate</h2>
+<h2><a name="SettingupanSSLCertificate35">Setting up an SSL Certificate</a></h2>
 <p>The following describes how to create a CSR and obtain an SSL certificate 
 without using IIS.&nbsp; We will be using RapidSSL to generate the SSL 
 certificate, and if you are using IIS, you can use the
@@ -535,7 +602,7 @@ relying on IIS.&nbsp; </p>
 describe them.&nbsp; It took quite a while to figure out this process, 
 especially the need to create a private key for the certificate in order to bind 
 it to port 443.</p>
-<h3>Generate The CSR</h3>
+<h3><a name="GenerateTheCSR36">Generate The CSR</a></h3>
 <p>First, a Certificate Signing Request (CSR) must be generated.&nbsp; 
 Left-click on the Windows icon and type &quot;mmc&quot; to open the Microsoft 
 Management Console:</p>
@@ -587,7 +654,7 @@ Also check the box &quot;Make private key exportable&quot;:</p>
 <p>Save the CSR as Base 64:</p>
 <p><img border="0" src="mmc-14.png" width="123" height="128"></p>
 <p>Open the file with notepad and copy it in the clipboard.</p>
-<h3>Register the CSR with RapidSSL</h3>
+<h3><a name="RegistertheCSRwithRapidSSL37">Register the CSR with RapidSSL</a></h3>
 <p>Go to <a href="http://www.rapidssl.com">www.rapidssl.com</a> and follow the 
 instructions for generating an SSL certificate.&nbsp; When prompted to enter 
 your CSR, paste in the contents of the file that you just created.</p>
@@ -595,12 +662,12 @@ your CSR, paste in the contents of the file that you just created.</p>
 address as the Level 2 Domain Address, for example:</p>
 <p><img border="0" src="ssl-1.png" width="248" height="148"></p>
 <p>After placing your order, check your postmaster email.</p>
-<h3>Approve the Certificate Request</h3>
+<h3><a name="ApprovetheCertificateRequest38">Approve the Certificate Request</a></h3>
 <p>The email you receive will have a link to approve the certificate request.&nbsp; 
 Click on it, then click on I Approve.&nbsp; Oddly, the certificate was emailed 
 to my gmail account (which I used when registering on RapidSSL) and not the 
 postmaster account.&nbsp; Go figure.</p>
-<h3>Import the Certification on Your Server</h3>
+<h3><a name="ImporttheCertificationonYourServer39">Import the Certification on Your Server</a></h3>
 <p>The email you received will have a Web Server CERTIFICATE at the bottom of 
 the email.&nbsp; Copy and paste this (including the &quot;---BEGIN CERTIFICATE---&quot; 
 and &quot;---END CERTIFICATE---&quot; to your server into a text file.</p>
@@ -614,7 +681,7 @@ certificates and select All Tasks -&gt; Import:</p>
 <p>Click Next -&gt; Finish -&gt; OK.&nbsp; Your certificate is now in the store, 
 similar to this:</p>
 <p><img border="0" src="mmc-17.png" width="518" height="81"></p>
-<h3>Create a Private Key for the Certificate</h3>
+<h3><a name="CreateaPrivateKeyfortheCertificate40">Create a Private Key for the Certificate</a></h3>
 <p>Creating a private key for this certificate is a vital step and I found to be 
 the missing link in much of the documentation that I found on the web.</p>
 <p>First, double-click on the certificate, click on the &quot;details&quot; tab, and note 
@@ -628,7 +695,7 @@ for your certificate (remove the spaces.)</p>
 certificate:</p>
 <p><img border="0" src="mmc-19.png" width="54" height="47"></p>
 <p>It now has a &quot;key&quot; on it!</p>
-<h3>Export the Certificate With its Private Key</h3>
+<h3><a name="ExporttheCertificateWithitsPrivateKey41">Export the Certificate With its Private Key</a></h3>
 <p>Right-click on the certificate and export it:</p>
 <p><img border="0" src="mmc-20.png" width="450" height="212"></p>
 <p>Click Next, and on the next dialog, select &quot;Yes, export the private key&quot;:</p>
@@ -637,7 +704,7 @@ certificate:</p>
 certificate:</p>
 <p><img border="0" src="mmc-22.png" width="432" height="328"></p>
 <p>Click Next, enter a file name (without extension), click Next, then Finish.</p>
-<h3>Import the Key'd Certificate in Trusted Root Certificate Authority</h3>
+<h3><a name="ImporttheKey'dCertificateinTrustedRootCertificateAuthority42">Import the Key'd Certificate in Trusted Root Certificate Authority</a></h3>
 <p>Right-click on the Certificate folder in the Trusted Root Certificate 
 Authority and select All Tasks -&gt; Import</p>
 <p><img border="0" src="mmc-23.png" width="475" height="192"></p>
@@ -646,7 +713,7 @@ will be prompted for your password:</p>
 <p><img border="0" src="mmc-24.png" width="435" height="318"></p>
 <p>Click Next, Next, and Finish.&nbsp; When you are done, the &quot;keyed&quot; 
 certificate will be in your Trusted Root Certification Authority list.</p>
-<h3>Bind the Certificate to Port 443</h3>
+<h3><a name="BindtheCertificatetoPort44343">Bind the Certificate to Port 443</a></h3>
 <p>Double-click on the certificate and, in the Details tab, scroll down to where 
 the &quot;Thumbnail&quot; is displayed.</p>
 <p><img border="0" src="mmc-25.png" width="396" height="286"></p>
@@ -654,11 +721,11 @@ the &quot;Thumbnail&quot; is displayed.</p>
 <pre>netsh http add sslcert ipport=0.0.0.0:443 certhash=[thumbnail] appid=[some GUID]</pre>
 <p>where [thumbnail] is the digital thumbnail of your certificate, <i>without 
 spaces</i>, and [some GUID] is a GUID of your choosing.</p>
-<h3>Add Port 443 to the EC2 and Window Firewall Inbound Rules</h3>
+<h3><a name="AddPort443totheEC2andWindowFirewallInboundRules44">Add Port 443 to the EC2 and Window Firewall Inbound Rules</a></h3>
 <p>Add HTTPS port 443 to both your EC2 inbound rule:</p>
 <p><img border="0" src="ec2-32.png" width="1070" height="35"></p>
 <p>and to the Window Firewall.</p>
-<h3>Verify You Have HTTPS Connectivity</h3>
+<h3><a name="VerifyYouHaveHTTPSConnectivity45">Verify You Have HTTPS Connectivity</a></h3>
 <p>Modify the test server above, adding an https listener:</p>
 <pre>listener.Prefixes.Add(&quot;https://x.x.x.x:443/&quot;); // PRIVATE IP!!!</pre>
 <p>Replacing &quot;x.x.x.x&quot; with the private IP of your server.</p>
@@ -666,13 +733,13 @@ spaces</i>, and [some GUID] is a GUID of your choosing.</p>
 and, in your browser, navigate to <a href="https://[yourdomain">
 https://[yourdomain</a>].&nbsp; For example:</p>
 <p><img border="0" src="https-1.png" width="501" height="224"></p>
-<h2>Conclusion</h2>
+<h2><a name="Conclusion46">Conclusion</a></h2>
 <p>126 screenshots later, I've finally completed an article I've wanted to write 
 for a couple years, but finally, in one article, is a complete description of 
 setting up an EC2 instance, configuring it with an SSH server, adding a mail 
 server,&nbsp; and obtaining an SSL certificate.&nbsp; I hope you find it useful 
 when you have to go through this process yourself!</p>
-<h2>References</h2>
+<h2><a name="References47">References</a></h2>
 <p><a href="https://support.microsoft.com/en-us/kb/889651">How to assign a 
 private key to a new certificate after you use the Certificates snap-in to 
 delete the original certificate in Internet Information Services</a></p>
