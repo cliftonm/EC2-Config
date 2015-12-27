@@ -495,12 +495,14 @@ tab, select &quot;My outgoing server (SMTP) requires authentication&quot;:</p>
 <p>Now click on &quot;Next&quot;.&nbsp; Outlook will test your settings, and after a 
 minute or so, should display:</p>
 <p><img border="0" src="ol-6.png" width="559" height="176"></p>
+<h3>Retrieve Emails</h3>
 <p>Get all the email off your server by clicking on the Send/Receive tab and 
 then Send/Receive All Folders:</p>
 <p><img border="0" src="ol-8.png" width="254" height="172"></p>
 <p>Once sync'd, check your junk email folder for the test message that you sent 
 earlier.&nbsp; In your inbox should also be a test message that Outlook sent.</p>
 <p><img border="0" src="ol-7.png" width="479" height="284"></p>
+<h3>Send Emails</h3>
 <p>Send a test email to another account (for example, the account you used to 
 send a test email to your server):</p>
 <p><img border="0" src="ol-9.png" width="345" height="375"></p>
@@ -512,6 +514,96 @@ mail!</p>
 <p>Congratulations -- you've now set up Mail Enable as a mail server and Outlook 
 to send / receive emails using your mail server.&nbsp; You can now set up 
 additional accounts, etc.</p>
+<h2>Setting up an SSL Certificate</h2>
+<h3>Generate The CSR</h3>
+<p>First, a Certificate Signing Request (CSR) must be generated.&nbsp; 
+Left-click on the Windows icon and type &quot;mmc&quot; to open the Microsoft 
+Management Console:</p>
+<p><img border="0" src="mmc-1.png"></p>
+<p>Right-click on the application and select &quot;Run as administrator&quot;.&nbsp; 
+When the application comes up, click on the File menu and select Add/Remove 
+Snap-in:</p>
+<p><img border="0" src="mmc-2.png" width="277" height="148"></p>
+<p>Click Certificates, then Add.&nbsp; Select &quot;Computer Account&quot;:</p>
+<p><img border="0" src="mmc-4.png" width="253" height="98"></p>
+<p>Click Next, then select &quot;Local Computer&quot;:</p>
+<p><img border="0" src="mmc-5.png" width="321" height="72"></p>
+<p>Then click Finish and OK.</p>
+<p>1. Expand the Certificates<br>
+2. Click on Personal<br>
+3. From the menu on the right, click on More Actions<br>
+4. All Tasks<br>
+5. Advanced Operations<br>
+6. Create Custom Request</p>
+<p><img border="0" src="mmc-6.png" width="871" height="205"></p>
+<p>Click Next, then &quot;Proceed without enrollment policy&quot;:</p>
+<p><img border="0" src="mmc-7.png" width="265" height="162"></p>
+<p>Click Next, then select &quot;(No template) CNG key&quot; and verify that &quot;Suppress 
+default extensions&quot; is not selected.&nbsp; Make sure PKCS #10 is selected:</p>
+<p><img border="0" src="mmc-8.png" width="570" height="180"></p>
+<p>Click Next.&nbsp; Click on the &quot;Details&quot; arrow, then &quot;Properties&quot;:</p>
+<p><img border="0" src="mmc-9.png" width="592" height="130"></p>
+<p>Enter a friendly name and description, which can be anything, for example:</p>
+<p><img border="0" src="mmc-10.png" width="335" height="171"></p>
+<p>Click on the Subject tab and add the following types:</p>
+<ul>
+	<li>Common name: This must be the fully qualified domain name of the server, 
+	in my case &quot;<a href="http://www.poloron.net">www.poloron.net</a>&quot;</li>
+	<li>Organization</li>
+	<li>State</li>
+	<li>Country</li>
+	<li>Email</li>
+</ul>
+<p>You should have something similar to this:</p>
+<p><img border="0" src="mmc-11.png" width="493" height="253"></p>
+<p>In the Private Key tab, make sure the Cryptographic Service Provider is RSA, 
+Microsoft Software Key Storage Provider, and that no other providers are 
+selected:</p>
+<p><img border="0" src="mmc-12.png" width="508" height="180"></p>
+<p>On this same tab, Expand Options and make sure the key size is at least 2048.&nbsp; 
+Also check the box &quot;Make private key exportable&quot;:</p>
+<p><img border="0" src="mmc-13.png" width="507" height="208"></p>
+<p>Click OK, then Next.</p>
+<p>Save the CSR as Base 64:</p>
+<p><img border="0" src="mmc-14.png" width="123" height="128"></p>
+<p>Open the file with notepad and copy it in the clipboard.</p>
+<h3>Register the CSR with RapidSSL</h3>
+<p>Go to <a href="http://www.rapidssl.com">www.rapidssl.com</a> and follow the 
+instructions for generating an SSL certificate.&nbsp; When prompted to enter 
+your CSR, paste in the contents of the file that you just created.</p>
+<p>When you get to the RapidSSL Enrollment page, select your postmaster email 
+address as the Level 2 Domain Address, for example:</p>
+<p><img border="0" src="ssl-1.png" width="248" height="148"></p>
+<p>After placing your order, check your postmaster email.</p>
+<h3>Approve the Certificate Request</h3>
+<p>The email you receive will have a link to approve the certificate request.&nbsp; 
+Click on it, then click on I Approve.&nbsp; Oddly, the certificate was emailed 
+to my gmail account (which I used when registering on RapidSSL) and not the 
+postmaster account.&nbsp; Go figure.</p>
+<h3>Import the Certification on Your Server</h3>
+<p>The email you received will have a Web Server CERTIFICATE at the bottom of 
+the email.&nbsp; Copy and paste this (including the &quot;---BEGIN CERTIFICATE---&quot; 
+and &quot;---END CERTIFICATE---&quot; to your server into a text file.</p>
+<p>Go back to the mmc console and expand the Certificates -&gt; Trusted Root 
+Certification Authority -&gt; Certificates tree.&nbsp; Right click on the 
+certificates and select All Tasks -&gt; Import:</p>
+<p><img border="0" src="mmc-15.png" width="595" height="304"></p>
+<p>Place the certificate in the Trusted Root Certification Authorities store:</p>
+<p><img border="0" src="mmc-16.png" width="453" height="210"></p>
+<p>Click Next -&gt; Finish -&gt; OK.&nbsp; Your certificate is now in the store, 
+similar to this:</p>
+<p><img border="0" src="mmc-17.png" width="357" height="59"></p>
+<h3>Import the Intermediate Certificate</h3>
+<p>TODO!</p>
+<h3>Verify You Have SSL Connectivity Now</h3>
+<p>Add HTTPS port 443 to both your EC2 inbound rule:</p>
+<p><img border="0" src="ec2-32.png" width="1070" height="35"></p>
+<p>and to the Window Firewall.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
