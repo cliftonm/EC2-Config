@@ -584,17 +584,57 @@ postmaster account.&nbsp; Go figure.</p>
 <p>The email you received will have a Web Server CERTIFICATE at the bottom of 
 the email.&nbsp; Copy and paste this (including the &quot;---BEGIN CERTIFICATE---&quot; 
 and &quot;---END CERTIFICATE---&quot; to your server into a text file.</p>
-<p>Go back to the mmc console and expand the Certificates -&gt; Trusted Root 
-Certification Authority -&gt; Certificates tree.&nbsp; Right click on the 
+<p>Go back to the mmc console and expand the Certificates -&gt; Personal -&gt; 
+Certificates tree.&nbsp; Yes, the &quot;Personal&quot; certificates folder, NOT the 
+Trusted Root Certification Authority folder.&nbsp; Right click on the 
 certificates and select All Tasks -&gt; Import:</p>
-<p><img border="0" src="mmc-15.png" width="595" height="304"></p>
-<p>Place the certificate in the Trusted Root Certification Authorities store:</p>
-<p><img border="0" src="mmc-16.png" width="453" height="210"></p>
+<p><img border="0" src="mmc-15.png" width="569" height="132"></p>
+<p>Place the certificate in the Personal store:</p>
+<p><img border="0" src="mmc-16.png" width="442" height="205"></p>
 <p>Click Next -&gt; Finish -&gt; OK.&nbsp; Your certificate is now in the store, 
 similar to this:</p>
-<p><img border="0" src="mmc-17.png" width="357" height="59"></p>
-<h3>Import the Intermediate Certificate</h3>
-<p>TODO!</p>
+<p><img border="0" src="mmc-17.png" width="518" height="81"></p>
+<h3>Create a Private Key for the Certificate</h3>
+<p>Creating a private key for this certificate is a vital step and I found to be 
+the missing link in much of the documentation that I found on the web.</p>
+<p>First, double-click on the certificate, click on the &quot;details&quot; tab, and note 
+the serial number:</p>
+<p><img border="0" src="mmc-18.png" width="268" height="148"></p>
+<p>Second, in a &quot;start as admin&quot; console window, enter:</p>
+<pre>certutil -repairstore my &quot;093406&quot;</pre>
+<p>replacing the key serial number in my command above with the serial number 
+for your certificate (remove the spaces.)</p>
+<p>Go back to the mmc and press F5.&nbsp; Note the change of the icon on the 
+certificate:</p>
+<p><img border="0" src="mmc-19.png" width="54" height="47"></p>
+<p>It now has a &quot;key&quot; on it!</p>
+<h3>Export the Certificate With its Private Key</h3>
+<p>Right-click on the certificate and export it:</p>
+<p><img border="0" src="mmc-20.png" width="450" height="212"></p>
+<p>Click Next, and on the next dialog, select &quot;Yes, export the private key&quot;:</p>
+<p><img border="0" src="mmc-21.png" width="446" height="185"></p>
+<p>Click Next, then Next again, then enter a password for your key'd 
+certificate:</p>
+<p><img border="0" src="mmc-22.png" width="432" height="328"></p>
+<p>Click Next, enter a file name (without extension), click Next, then Finish.</p>
+<h3>Import the Key'd Certificate in Trusted Root Certificate Authority</h3>
+<p>Right-click on the Certificate folder in the Trusted Root Certificate 
+Authority and select All Tasks -&gt; Import</p>
+<p><img border="0" src="mmc-23.png" width="475" height="192"></p>
+<p>Select the &quot;.pfx&quot; file that was saved in the preceding section.&nbsp; You 
+will be prompted for your password:</p>
+<p><img border="0" src="mmc-24.png" width="435" height="318"></p>
+<p>Click Next, Next, and Finish.&nbsp; When you are done, the &quot;keyed&quot; 
+certificate will be in your Trusted Root Certification Authority list.</p>
+<h3>Bind the Certificate to Port 443</h3>
+<p>Double-click on the certificate and, in the Details tab, scroll down to where 
+the &quot;Thumbnail&quot; is displayed.</p>
+<p>[img]</p>
+<p>At the command prompt, enter:</p>
+<pre>C:\Server&gt;netsh http add sslcert ipport=0.0.0.0:443 certhash=[thumbnail] appid=[some GUID]</pre>
+<p>where [thumbnail] is the digital thumbnail of your certificate, <i>without 
+spaces</i>, and [some GUID] is a GUID of your choosing.</p>
+<p>&nbsp;</p>
 <h3>Verify You Have SSL Connectivity Now</h3>
 <p>Add HTTPS port 443 to both your EC2 inbound rule:</p>
 <p><img border="0" src="ec2-32.png" width="1070" height="35"></p>
