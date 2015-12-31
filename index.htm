@@ -523,6 +523,44 @@ mail!</p>
 <p>Congratulations -- you've now set up Mail Enable as a mail server and Outlook 
 to send / receive emails using your mail server.&nbsp; You can now set up 
 additional accounts, etc.</p>
+<h3>Programmatically Sending Email via Your Server</h3>
+<p>We can now programmatically send email via our server.&nbsp; For example:</p>
+<pre>using System;
+using System.Net;
+using System.Net.Mail;
+
+namespace SendMailExample
+{
+  public class Program
+  {
+    public static void Main(string[] args)
+    {
+      string username = [username of the mailbox on your server]
+      string password = [password of the mailbox on your server]
+      string toEmail = [email address of recipient]
+      string fromEmail = [email address of sender -- a mailbox on your server]
+      string host = [mail.&lt;yourserver&gt;, for example, mail.foo.com]
+  
+      SmtpClient smtpClient = new SmtpClient();
+      NetworkCredential basicCredential = new NetworkCredential(username, password);
+      MailMessage message = new MailMessage();
+      MailAddress fromAddress = new MailAddress(fromEmail);
+
+      smtpClient.Host = host;
+      smtpClient.Port = 587;          // Note the port setting!
+      smtpClient.UseDefaultCredentials = false;
+      smtpClient.Credentials = basicCredential;
+
+      message.From = fromAddress;
+      message.Subject = &quot;Test Mail&quot;;
+      message.IsBodyHtml = true;
+      message.Body = &quot;&lt;h1&gt;your message body&lt;/h1&gt;&quot;;
+      message.To.Add(toEmail);
+
+      smtpClient.Send(message);
+    }
+  }
+}</pre>
 <h2>Setting up an SSL Certificate</h2>
 <p>The following describes how to create a CSR and obtain an SSL certificate 
 without using IIS.&nbsp; We will be using RapidSSL to generate the SSL 
@@ -668,7 +706,7 @@ https://[yourdomain</a>].&nbsp; For example:</p>
 <p><img border="0" src="https-1.png" width="501" height="224"></p>
 <h2>Conclusion</h2>
 <p>126 screenshots later, I've finally completed an article I've wanted to write 
-for a couple years, but finally, in one article, is a complete description of 
+for a couple years: a complete description of 
 setting up an EC2 instance, configuring it with an SSH server, adding a mail 
 server,&nbsp; and obtaining an SSL certificate.&nbsp; I hope you find it useful 
 when you have to go through this process yourself!</p>
